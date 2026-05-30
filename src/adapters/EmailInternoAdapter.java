@@ -1,8 +1,10 @@
 package adapters;
 
+import anotacoes.TipoNotificador;
 import notificador.Notificador;
 import services.EmailInterno;
 
+@TipoNotificador(tipo = "email")
 public class EmailInternoAdapter implements Notificador {
 	private EmailInterno email;
 
