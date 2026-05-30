@@ -1,7 +1,6 @@
 package services;
 
 public class EmailInterno {
-
 	public void enviarEmail(String destino, String titulo, String texto) {
 		System.out.println("[EmailInterno] Enviando e-mail...");
 		System.out.println("  Para:   " + destino);

@@ -1,16 +1,15 @@
 package system;
 
-import services.EmailInterno;
+import notificador.Notificador;
 
 public class SistemaNotificacao {
+	private Notificador notificador;
 
-	private EmailInterno email;
-
-	public SistemaNotificacao() {
-		this.email = new EmailInterno();
+	public SistemaNotificacao(Notificador notificador) {
+		this.notificador = notificador;
 	}
 
 	public void notificar(String usuario, String mensagem) {
-		email.enviarEmail(usuario, "Notificação do sistema", mensagem);
+		notificador.enviar(usuario, mensagem);
 	}
 }
