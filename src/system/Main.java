@@ -1,52 +1,105 @@
 package system;
 
-import adapters.EmailInternoAdapter;
-import adapters.SmsAdapter;
 import anotacoes.TipoNotificador;
 import notificador.Notificador;
-import services.EmailInterno;
-import services.SmsServico;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
-	public static void main(String[] args) {
-		System.out.println("=== Padrão Adapter + Reflexão e Anotação (passo 3) ===\n");
 
-		String tipo = System.getProperty("notificador.tipo", "email");
-		System.out.println("Tipo de notificador solicitado: " + tipo);
+	private static final Map<String, Class<? extends Notificador>> ADAPTER_MAP = new HashMap<>();
+
+	static {
+		carregarAdapters();
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void carregarAdapters() {
 
 		try {
-			Class<? extends Notificador> adapterClass = null;
-			Object servico = null;
 
-			if (tipo.equals("email")) {
-				adapterClass = EmailInternoAdapter.class;
-				servico = new EmailInterno();
-			} else if (tipo.equals("sms")) {
-				adapterClass = SmsAdapter.class;
-				servico = new SmsServico();
-			} else {
-				throw new IllegalArgumentException("Tipo inválido: " + tipo);
+			ClassLoader loader = Thread.currentThread().getContextClassLoader();
+
+			URL url = loader.getResource("adapters");
+
+			if (url == null) {
+				throw new RuntimeException("Pacote adapters não encontrado.");
 			}
 
-			if (adapterClass.isAnnotationPresent(TipoNotificador.class)) {
-				TipoNotificador anot = adapterClass.getAnnotation(TipoNotificador.class);
-				System.out.println("Anotação encontrada: tipo = " + anot.tipo());
-			} else {
-				System.out.println("A classe não possui a anotação @TipoNotificador");
+			File pasta = new File(url.toURI());
+
+			for (File arquivo : pasta.listFiles()) {
+
+				String nome = arquivo.getName();
+
+				if (!nome.endsWith(".class")) {
+					continue;
+				}
+
+				String classeNome = "adapters." + nome.replace(".class", "");
+
+				Class<?> classe = Class.forName(classeNome);
+
+				if (!Notificador.class.isAssignableFrom(classe)) {
+					continue;
+				}
+
+				if (!classe.isAnnotationPresent(TipoNotificador.class)) {
+					continue;
+				}
+
+				TipoNotificador anotacao = classe.getAnnotation(TipoNotificador.class);
+
+				ADAPTER_MAP.put(anotacao.tipo(), (Class<? extends Notificador>) classe);
+
+				System.out.println("[REGISTRADO] " + classe.getSimpleName() + " -> " + anotacao.tipo());
 			}
 
-			Constructor<? extends Notificador> construtor = adapterClass.getConstructor(servico.getClass());
-			Notificador notificador = construtor.newInstance(servico);
+		} catch (Exception e) {
+			throw new RuntimeException("Erro ao carregar adapters", e);
+		}
+	}
+
+	public static void main(String[] args) {
+
+		System.out.println("\n=== Padrão Adapter + Reflexão e Anotação (passo 3) ===\n");
+
+		String tipo = System.getProperty("notificador.tipo", "email");
+
+		try {
+
+			Class<? extends Notificador> adapterClass = ADAPTER_MAP.get(tipo);
+
+			if (adapterClass == null) {
+				throw new RuntimeException("Nenhum adapter encontrado para: " + tipo);
+			}
+
+			Constructor<?> constructor = adapterClass.getDeclaredConstructors()[0];
+
+			Class<?> servicoClass = constructor.getParameterTypes()[0];
+
+			Object servico = servicoClass.getDeclaredConstructor().newInstance();
+
+			Notificador notificador = (Notificador) constructor.newInstance(servico);
+
+			TipoNotificador anot = adapterClass.getAnnotation(TipoNotificador.class);
+
+			System.out.println("Anotação encontrada: " + anot.tipo());
 
 			SistemaNotificacao sistema = new SistemaNotificacao(notificador);
 
 			sistema.notificar("joao@email.com", "Seu cadastro foi confirmado.");
+
 			sistema.notificar("admin@empresa.com", "Falha de autenticação.");
 
 		} catch (Exception e) {
-			System.err.println("Erro ao configurar o notificador: " + e.getMessage());
+
+			System.err.println("Erro: " + e.getMessage());
+
 			e.printStackTrace();
 		}
 	}

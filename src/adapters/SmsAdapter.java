@@ -6,7 +6,8 @@ import services.SmsServico;
 
 @TipoNotificador(tipo = "sms")
 public class SmsAdapter implements Notificador {
-	private SmsServico sms;
+
+	private final SmsServico sms;
 
 	public SmsAdapter(SmsServico sms) {
 		this.sms = sms;

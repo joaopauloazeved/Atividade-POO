@@ -6,7 +6,8 @@ import services.EmailInterno;
 
 @TipoNotificador(tipo = "email")
 public class EmailInternoAdapter implements Notificador {
-	private EmailInterno email;
+
+	private final EmailInterno email;
 
 	public EmailInternoAdapter(EmailInterno email) {
 		this.email = email;
@@ -14,6 +15,6 @@ public class EmailInternoAdapter implements Notificador {
 
 	@Override
 	public void enviar(String destinatario, String mensagem) {
-		email.enviarEmail(destinatario, "Notificação do sistema", mensagem);
+		email.enviarEmail(destinatario, "Notificação do Sistema", mensagem);
 	}
 }

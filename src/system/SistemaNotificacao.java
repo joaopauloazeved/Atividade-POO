@@ -3,7 +3,8 @@ package system;
 import notificador.Notificador;
 
 public class SistemaNotificacao {
-	private Notificador notificador;
+
+	private final Notificador notificador;
 
 	public SistemaNotificacao(Notificador notificador) {
 		this.notificador = notificador;
